@@ -17,26 +17,55 @@ setupNavigation();
 setupSearch();
 setupAdmin();
 
+async function loadEverything(user, profile) {
+  appState.currentUser = user;
+  appState.currentProfile = profile;
+
+  await Promise.all([
+    loadAppointments(),
+    loadTasks(),
+    loadNotes()
+  ]);
+
+  renderDashboard();
+  renderFamily();
+
+  if (profile && profile.role === "admin") {
+    await loadAdminPanel();
+  }
+}
+
+function clearEverything() {
+  appState.currentUser = null;
+  appState.currentProfile = null;
+  appState.appointments = [];
+  appState.tasks = [];
+  appState.notes = [];
+  appState.users = [];
+
+  const idsToClear = [
+    "appointments",
+    "todayAppointments",
+    "tasks",
+    "openTasks",
+    "notes",
+    "recentNotes",
+    "familyGrid",
+    "searchResults",
+    "adminPanel"
+  ];
+
+  idsToClear.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = "";
+  });
+}
+
 setupAuth(
   async (user, profile) => {
-    appState.currentUser = user;
-    appState.currentProfile = profile;
-
-    await Promise.all([loadAppointments(), loadTasks(), loadNotes()]);
-    renderDashboard();
-    renderFamily();
-    await loadAdminPanel();
+    await loadEverything(user, profile);
   },
   () => {
-    appState.currentUser = null;
-    appState.currentProfile = null;
-    appState.appointments = [];
-    appState.tasks = [];
-    appState.notes = [];
-    appState.users = [];
-
-    document.querySelectorAll("#appContent div[id]").forEach(el => {
-      if (el.id) el.innerHTML = "";
-    });
+    clearEverything();
   }
 );
